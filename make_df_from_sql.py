@@ -56,6 +56,50 @@ def create_connection(connection_pool=None):
     
 #設定要抓的資料庫的表格
 
+def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores: str, recommend_store1: str, recommend_store2: str, table_name: str = 'FinalTable') -> pd.DataFrame:
+    """
+    使用 JOIN 直接從資料庫獲取特定使用者的卡片任務。
+    """
+    df = pd.DataFrame()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        
+        # 這個查詢會先 JOIN 三張表，再進行商店篩選
+        query = f"""
+            SELECT
+                ft.card_name, ft.store, ft.task, ft.basic_pt, ft.bonus_pt, ft.type_, ft.cooper, ft.diver, ft.platform
+            FROM
+                {table_name} AS ft
+            JOIN
+                UserCard AS uc ON ft.card_id = uc.CardId_id
+            JOIN
+                _User AS u ON uc.LineUserId_id = u.LineUserId_id
+            WHERE
+                u.line_user_id = %s
+                AND (ft.store LIKE %s OR ft.store LIKE %s OR ft.store LIKE %s)
+        """
+        params = (
+            line_user_id,
+            f"%{extracted_stores}%",
+            f"%{recommend_store1}%",
+            f"%{recommend_store2}%",
+        )
+
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        df = pd.DataFrame(rows)
+
+        if df.empty:
+            logger.warning(f"⚠️ 在使用者 {line_user_id} 的卡片中，找不到符合條件的資料")
+        else:
+            logger.info(f"✅ 成功為使用者 {line_user_id} 獲取到 {len(df)} 條個人化任務資料")
+        
+        cursor.close()
+        return df
+
+    except Error as e:
+        logger.error(f"❌ 獲取使用者任務資料時發生錯誤: {e}")
+        return df
 
 def fetch_tasks_from_db(conn, extracted_stores,recommend_store1,recommend_store2, table_name:str='FinalTable') -> pd.DataFrame:
     """從資料庫獲取任務資料
@@ -150,46 +194,3 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
     logger.info(f"✅ 完成對 {len(df)} 條任務的 AI 評分。")
     return df
 
-
-
-
-
-
-
-'''
-def add_ai_scores(df, openai_client=None, model="gpt-3.5-turbo-1106", temperature=0.3):
-    if openai_client is None:
-        openai_client = get_openai_client()
-
-    scores = []
-    # 我們不需要用到 index，所以直接用 _ 丟掉
-    for _, row in df.iterrows():
-        task = row["task"]
-        try:
-            logger.info(f"🧠 評估任務內容中：{task}")
-            response = openai_client.chat.completions.create(
-                model=model,
-                messages=[
-                    { 
-                        "role": "system",
-                        "content": "你是一位精準的任務分析師。請從我提供的內容，根據執行難度、時間與機會成本給出 1~5 分，其中 1 分為難度最低，5 分為最高，取到小數點第二位。輸出格式為：分數: X.X"
-                    },
-                    {"role": "user", "content": task}
-                ],
-                temperature=temperature,
-            )
-
-            content = response.choices[0].message.content
-            match = re.search(r"分數[:：]?\s*([0-5]\.\d{1,2})", content)
-            score = float(match.group(1)) if match else 0.0
-            print(score)
-
-        except Exception as e:
-            logger.error(f"❌ 任務評分失敗（{task}）：{e}")
-            score = 0.0
-
-        scores.append(score)  # 要寫在迴圈裡！
-    # ✅ 加入 AI 評分欄位
-    df["task_score"] = scores
-    return df
-'''

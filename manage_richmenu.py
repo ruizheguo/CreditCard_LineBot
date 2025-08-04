@@ -5,7 +5,6 @@ from linebot.v3.messaging import (
     RichMenuSize,
     RichMenuArea,
     RichMenuBounds,
-    PostbackAction,
     MessageAction,
 )
 
@@ -42,7 +41,7 @@ def create_rich_menu_config():
             ),
             RichMenuArea(
                 bounds=RichMenuBounds(x=1678, y=828, width=797, height=834),
-                action=MessageAction(text='關於我們')
+                action=MessageAction(text='關於我們'),
             )
         ]
     )

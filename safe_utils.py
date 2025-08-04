@@ -29,10 +29,10 @@ def calculate_total_score(basic_pt, bonus_pt, type_, ai_score, diver, cooper,
     # 计算总分
     return (basic_pt + bonus_pt) - penalty_weight * (type_ + ai_score) + diversity_weight * (diver + cooper)
 
-def calculate_total_score_mc(basic_pt,bonus_pt, type, ai_score,
+def calculate_total_score_mc(basic_pt,bonus_pt, type_, ai_score,
                           penalty_weight=0.25):
     # 检查所有输入值是否为None或非数值
-    if ai_score is None or basic_pt is None or bonus_pt is None or type is None:
+    if ai_score is None or basic_pt is None or bonus_pt is None or type_ is None:
         return None
         
     # 尝试将所有输入转换为浮点数
