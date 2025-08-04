@@ -1,0 +1,33 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: AI_BigData_Project
+    # restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: RootPassword
+      MYSQL_DATABASE: credit_card_bot
+      MYSQL_USER: user
+      MYSQL_PASSWORD: Password
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_USER_PRIVILEGES: "SELECT,INSERT,UPDATE,DELETE"  # 指定權限
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # - ./20250725.sql:/docker-entrypoint-initdb.d/20250725.sql
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # - ./second.sql:/docker-entrypoint-initdb.d/second.sql
+    command: 
+      --character-set-server=utf8mb4 
+      --collation-server=utf8mb4_unicode_ci 
+      --bind-address=0.0.0.0
+      --init-connect='SET NAMES utf8mb4'
+      --skip-character-set-client-handshake
+    networks:
+      - mysql_network
+
+networks:
+  mysql_network:
+
+volumes:
+  mysql_data:
