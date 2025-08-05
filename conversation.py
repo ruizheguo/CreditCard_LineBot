@@ -25,16 +25,15 @@ def clear_state(line_user_id: str):
 # --- 資料庫操作 (已修改對應您的資料表) ---
 
 def ensure_user_record(line_user_id: str):
-    """確保使用者紀錄存在，對應您的 `_User` 表"""
+    """確保使用者紀錄存在，對應您的 `User` 表"""
     conn = create_connection()
     if not conn:
         return
     
     try:
         cursor = conn.cursor(dictionary=True)
-        # 修改: 表格名稱從 `User` 改為 `_User`
         # 欄位名稱 `line_user_id` 保持不變
-        query = "INSERT IGNORE INTO `_User` (line_user_id) VALUES (%s)"
+        query = "INSERT IGNORE INTO `User` (line_user_id) VALUES (%s)"
         cursor.execute(query, (line_user_id,))
         conn.commit()
         logger.info(f"已確認資料庫中存在使用者紀錄: {line_user_id}")
@@ -54,9 +53,8 @@ def _get_user_pk(line_user_id: str) -> int | None:
     user_pk = None
     try:
         cursor = conn.cursor(dictionary=True)
-        # 修改: 表格名稱從 `User` 改為 `_User`
         # 查詢的欄位 LineUserId_id 和 line_user_id 保持不變
-        query = "SELECT LineUserId_id FROM `_User` WHERE line_user_id = %s"
+        query = "SELECT LineUserId_id FROM `User` WHERE line_user_id = %s"
         cursor.execute(query, (line_user_id,))
         row = cursor.fetchone()
         if row:
@@ -71,11 +69,7 @@ def _get_user_pk(line_user_id: str) -> int | None:
     return user_pk
 
 def _get_card_pk(card_id: int) -> int | None:
-    """
-    根據業務ID (card_id) 獲取在 `UserCard` 表中要使用的主鍵 (CardId_id)。
-    注意：這裡我們假設 `Card_Table` 中的 `card_id` 欄位就是 `UserCard` 中要用到的 `CardId_id`。
-    如果 `Card_Table` 也有自己的獨立主鍵，這裡的邏輯需要調整。
-    """
+    """根據業務ID (card_id) 獲取在 `UserCard` 表中要使用的主鍵 (CardId_id)"""
     conn = create_connection()
     if not conn:
         return None
@@ -83,14 +77,13 @@ def _get_card_pk(card_id: int) -> int | None:
     card_pk = None
     try:
         cursor = conn.cursor(dictionary=True)
-        # 修改: 表格名稱從 `Card` 改為 `Card_Table`
-        # 修改: 查詢的欄位改為 `card_id`，因為這是 UserCard 會用到的ID
-        query = "SELECT card_id FROM `Card_Table` WHERE card_id = %s"
+        # 修改: 查詢的欄位改為 `CardId_id`，因為這是 UserCard 會用到的ID
+        query = "SELECT CardId_id FROM `Card` WHERE card_id = %s"
         cursor.execute(query, (card_id,))
         row = cursor.fetchone()
         if row:
             # 修改: 返回的欄位是 `card_id`
-            card_pk = row['card_id']
+            card_pk = row['CardId_id']
     except Error as e:
         logger.error(f"獲取卡片 PK 時發生錯誤: {e}")
     finally:
@@ -100,7 +93,7 @@ def _get_card_pk(card_id: int) -> int | None:
     return card_pk
 
 def get_all_cards() -> list[dict]:
-    """從 `Card_Table` 獲取所有卡片資料"""
+    """從 `Card` 獲取所有卡片資料"""
     conn = create_connection()
     if not conn:
         return []
@@ -108,9 +101,8 @@ def get_all_cards() -> list[dict]:
     cards = []
     try:
         cursor = conn.cursor(dictionary=True)
-        # 修改: 表格名稱從 `Card` 改為 `Card_Table`
         # 查詢的欄位 card_id, bank_name, card_name 符合您的設計，不需更改
-        query = "SELECT card_id, bank_name, card_name FROM `Card_Table`"
+        query = "SELECT card_id, bank_name, card_name FROM `Card`"
         cursor.execute(query)
         cards = cursor.fetchall()
     except Error as e:
@@ -173,7 +165,7 @@ def delete_user_card(line_user_id: str, card_id: int) -> bool:
     try:
         cursor = conn.cursor()
         # 修改: 查詢的欄位改為 `LineUserId_id` 和 `CardId_id`
-        query = "DELETE FROM `UserCard` WHERE LineUserId_id = %s AND CardId_id = %s"
+        query = "DELETE uc FROM `UserCard` uc WHERE LineUserId_id = %s AND CardId_id = %s"
         cursor.execute(query, (user_pk, card_pk))
         conn.commit()
         success = cursor.rowcount > 0
@@ -205,8 +197,8 @@ def get_user_cards(line_user_id: str) -> list[str]:
         # 修改: JOIN 的表格和欄位名稱全部更新為您的設計
         query = """
             SELECT c.card_name 
-            FROM `UserCard` uc
-            JOIN `Card_Table` c ON uc.CardId_id = c.card_id
+            FROM `Card` c
+            JOIN `UserCard` uc ON uc.CardId_id = c.CardId_id
             WHERE uc.LineUserId_id = %s
         """
         cursor.execute(query, (user_pk,))
