@@ -40,10 +40,8 @@ def recommend_stores_by_sentence(sentence, client: Optional[OpenAI] = None):
         
     try:
         all_stores_prompt = (
-           "根據輸入的句子，提取句中的商店。若未明言，則根據語意推論可能的實際商店名稱，例如：我想去日本玩，可以推測「中華航空」或「雄獅旅遊」。最後得到商家1。"
-           "限制：商家須為台灣實際存在、具名品牌，且網路可查。不可回傳泛稱（如「水果攤」、「餐廳」）。"
-           "查詢「商家1」的性質，依其性質推薦另外兩家在台灣「性質相近、網路上找得到商家」得到商店2、商店3"
-           "回傳時只輸出這三間商店，以請以 JSON 格式回傳，不要說明文字、引言、格式說明。例如：[商家1,商店2,商店3]"
+           "根據輸入的句子，提取句中的商店。若未明言，則根據語意，先判斷其取向，例如：「我想去日本玩」判斷是「旅遊」，就可以根據旅遊推出「中華航空」或「雄獅旅遊」；「我想買水果」判斷是「生活食品」就可以根據生活食品推論出「全聯」或「愛買」。最後得到商家1。"
+           "請以 JSON 格式回傳，不要說明文字、引言、格式說明。例如：[商家1]"
         )
         response_all_stores = client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
@@ -56,18 +54,13 @@ def recommend_stores_by_sentence(sentence, client: Optional[OpenAI] = None):
         content_str = response_all_stores.choices[0].message.content.strip()
         content_all_stores = json.loads(content_str)
         content_extract = content_all_stores[0]
-        content_recommend1 = content_all_stores[1]
-        content_recommend2 = content_all_stores[2]
+
         
         return {
             "extracted_stores": content_extract,
-            "recommend_store1": content_recommend1,
-            "recommend_store2": content_recommend2
         }
     except Exception as e:
         logger.error(f"推薦商店時發生錯誤: {e}")
         return {
             "extracted_stores": [],
-            "recommend_store1": None,
-            "recommend_store2": None
         }

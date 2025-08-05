@@ -56,7 +56,7 @@ def create_connection(connection_pool=None):
     
 #設定要抓的資料庫的表格
 
-def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores: str, recommend_store1: str, recommend_store2: str, table_name: str = 'FinalTable') -> pd.DataFrame:
+def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores: str, table_name: str = 'Main') -> pd.DataFrame:
     """
     使用 JOIN 直接從資料庫獲取特定使用者的卡片任務。
     """
@@ -64,25 +64,24 @@ def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores: st
     try:
         cursor = conn.cursor(dictionary=True)
         
-        # 這個查詢會先 JOIN 三張表，再進行商店篩選
+        # 這個查詢會先 JOIN 四張表，再進行商店篩選
         query = f"""
             SELECT
-                ft.card_name, ft.store, ft.task, ft.basic_pt, ft.bonus_pt, ft.type_, ft.cooper, ft.diver, ft.platform
+                m.card_name, m.store, m.task, m.basic_pt, m.bonus_pt, m.type, m.cooper, m.diver
             FROM
-                {table_name} AS ft
+                {table_name} AS m
             JOIN
-                UserCard AS uc ON ft.card_id = uc.CardId_id
+                Card AS c ON c.card_id = m.card_id
             JOIN
-                _User AS u ON uc.LineUserId_id = u.LineUserId_id
+                UserCard AS uc ON uc.CardId_id = c.CardId_id
+            JOIN
+                _User AS u ON u.LineUserId_id = uc.LineUserId_id
             WHERE
-                u.line_user_id = %s
-                AND (ft.store LIKE %s OR ft.store LIKE %s OR ft.store LIKE %s)
+                u.line_user_id = %s AND m.store LIKE %s
         """
         params = (
             line_user_id,
             f"%{extracted_stores}%",
-            f"%{recommend_store1}%",
-            f"%{recommend_store2}%",
         )
 
         cursor.execute(query, params)
@@ -101,7 +100,7 @@ def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores: st
         logger.error(f"❌ 獲取使用者任務資料時發生錯誤: {e}")
         return df
 
-def fetch_tasks_from_db(conn, extracted_stores,recommend_store1,recommend_store2, table_name:str='FinalTable') -> pd.DataFrame:
+def fetch_tasks_from_db(conn, extracted_stores, table_name:str='Main') -> pd.DataFrame:
     """從資料庫獲取任務資料
     
     Args:
@@ -115,15 +114,13 @@ def fetch_tasks_from_db(conn, extracted_stores,recommend_store1,recommend_store2
     try:
         cursor = conn.cursor(dictionary=True)
         query = f"""
-        SELECT card_name,store, task, basic_pt, bonus_pt, type_, cooper, diver, platform 
-        FROM {table_name} 
-        WHERE store LIKE %s OR store LIKE %s OR store LIKE %s
+        SELECT card_name, store, task, basic_pt, bonus_pt, type_, cooper, diver 
+        FROM {table_name}
+        WHERE store LIKE %s
         """
         params = (
             f"%{extracted_stores}%",
-            f"%{recommend_store1}%",
-            f"%{recommend_store2}%",
-)
+        )
         cursor.execute(query,params)
         rows = cursor.fetchall()
         df = pd.DataFrame(rows)

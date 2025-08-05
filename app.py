@@ -22,22 +22,18 @@ async def _async_mycard_logic(sentence):
     recs = recommend_stores_by_sentence(sentence)
     # extractedd 現在預期是字串，或在找不到時為空列表/None
     extractedd = recs.get('extracted_stores') 
-    recommend_store1 = recs.get('recommend_store1')
-    recommend_store2 = recs.get('recommend_store2')
-
     conn = create_db_connection()
     if conn is None:
         raise ConnectionError('❌ 無法連接到資料庫。')
 
     # fetch_tasks_from_db 的參數 extracted_stores 接收到字串，這在 SQL 的 LIKE 查詢中是正常的
-    df = fetch_tasks_from_db(conn, extractedd, recommend_store1, recommend_store2)
+    df = fetch_tasks_from_db(conn, extractedd)
     
     # --- 關鍵修正 (1): 檢查 DataFrame 是否為空，這是防止 KeyError 的最重要步驟 ---
     if df.empty:
         app.logger.warning("資料庫查無任何相關商店資訊，將返回空結果。")
         # 即使 df 為空，依然將 OpenAI 提取的資訊回傳給前端顯示
-        return [], extractedd, recommend_store1, recommend_store2
-
+        return [], extractedd
     # --- 關鍵修正 (2): 修改篩選邏輯以符合 extractedd 是字串的前提 ---
     # 如果 extractedd 是一個非空字串，就用它來過濾 DataFrame
     if isinstance(extractedd, str) and extractedd:
@@ -47,21 +43,20 @@ async def _async_mycard_logic(sentence):
     # 如果經過篩選後 df 變空了，也直接返回
     if df.empty:
         app.logger.warning(f"根據使用者指定商店 '{extractedd}' 篩選後，無任何相符卡片資訊。")
-        return [], extractedd, recommend_store1, recommend_store2
-
+        return [], extractedd
     added_df = await add_ai_scores_async(df)
     _, result_df = cal_total_scoremc(added_df) 
     results = result_df.to_dict(orient='records')
     
-    return results, extractedd, recommend_store1, recommend_store2
+    return results, extractedd
 
 @app.route('/mycard', methods=['POST'])
 def mycard():
     sentence = request.form.get('sentence', '').strip()
     try:
         # 在 Flask 同步路由中執行非同步邏輯
-        results, extractedd, recommend_store1, recommend_store2 = asyncio.run(_async_mycard_logic(sentence))
-        return render_template('mycard.html', results=results, extracted=extractedd,recommend_store1=recommend_store1, recommend_store2=recommend_store2)
+        results, extractedd= asyncio.run(_async_mycard_logic(sentence))
+        return render_template('mycard.html', results=results, extracted=extractedd)
     except ConnectionError as e: # 捕獲自定義的連線錯誤
         return render_template('mycard.html', error=str(e))
     except Exception as e:
@@ -84,12 +79,12 @@ async def _async_result_logic(sentence):
     if conn is None:
         raise ConnectionError('❌ 無法連接到資料庫。')
 
-    df = fetch_tasks_from_db(conn, extractedd, recommend_store1, recommend_store2)
+    df = fetch_tasks_from_db(conn, extractedd)
     
     # --- 關鍵修正 (1): 檢查 DataFrame 是否為空，這是防止 KeyError 的最重要步驟 ---
     if df.empty:
         app.logger.warning("資料庫查無任何相關商店資訊，將返回空結果。")
-        return [], extractedd, recommend_store1, recommend_store2
+        return [], extractedd
 
     # --- 關鍵修正 (2): 修改篩選邏輯以符合 extractedd 是字串的前提 ---
     if isinstance(extractedd, str) and extractedd:
@@ -98,21 +93,21 @@ async def _async_result_logic(sentence):
     # 如果經過篩選後 df 變空了，也直接返回
     if df.empty:
         app.logger.warning(f"根據使用者指定商店 '{extractedd}' 篩選後，無任何相符卡片資訊。")
-        return [], extractedd, recommend_store1, recommend_store2
+        return [], extractedd
 
     added_df = await add_ai_scores_async(df)
     _, result_df = cal_total_score(added_df) 
     results = result_df.to_dict(orient='records')
     
-    return results, extractedd, recommend_store1, recommend_store2
+    return results, extractedd
 
 @app.route('/result', methods=['POST'])
 def result():
     sentence = request.form.get('sentence', '').strip()
     try:
         # 在 Flask 同步路由中執行非同步邏輯
-        results, extractedd, recommend_store1, recommend_store2 = asyncio.run(_async_result_logic(sentence))
-        return render_template('result.html', results=results, extracted=extractedd,recommend_store1=recommend_store1, recommend_store2=recommend_store2)
+        results, extractedd= asyncio.run(_async_result_logic(sentence))
+        return render_template('result.html', results=results, extracted=extractedd)
     except ConnectionError as e: # 捕獲自定義的連線錯誤
         return render_template('result.html', error=str(e))
     except Exception as e:
@@ -264,7 +259,26 @@ def handle_text_message(event: MessageEvent):
             return
         
         if text == "關於我們":
-            reply_text = "哈囉！我們是「卡利High」官方帳號。我們的主旨是希望大家能夠聰明消費，在滿足物慾的同時，也可以好好省錢！\n功能介紹：\n"
+            reply_text = (
+        "✨ 卡哩嗨 功能介紹 ✨\n"
+        "我們旨在解決您的信用卡選擇困難，讓每次消費都享受到最佳回饋！\n\n"
+        "💳 核心功能\n"
+        "我要購物 🛍️：\n"
+        "聰明推薦！根據您消費的商店，我們會從您的卡片中，"
+        "精選出最適合、回饋最佳的信用卡，讓您不漏掉任何優惠。\n\n"
+        "我的卡夾 💼：\n"
+        "輕鬆管理！在這裡您可以一覽所有已新增至系統的信用卡清單，所有資訊一目瞭然。\n\n"
+        "推薦新卡 🌟：\n"
+        "專屬推薦！為您發掘更適合特定商店，且您尚未擁有的潛力好卡，"
+        "幫您省更多，聰明消費！\n\n"
+        "🛠️ 卡片管理\n"
+        "新增卡片 ➕：\n"
+        "快速建檔！將您持有的信用卡輕鬆加入系統，立即開始智慧管理您的每一筆消費。\n\n"
+        "刪除卡夾 🗑️：\n"
+        "彈性調整！隨時移除您不再使用或想刪除的信用卡資訊，讓您的卡夾保持最新。\n"
+        "(Ex：Line Pay卡是822005，那就在輸入匡裡輸入：822005）"
+    )
+            reply(reply_token, [TextMessage(text=reply_text)])
             return
 
         # --- 階段二：如果不是指令，再根據「現有狀態」處理 ---
@@ -300,13 +314,14 @@ def handle_text_message(event: MessageEvent):
                 action = state.get('action')
                 if action == "mycard_query":
                     app.logger.info(f"使用者 {user_id} 處於 mycard_query 狀態，查詢: {text}")
-                    results, extractedd, recommend_store1, recommend_store2 = asyncio.run(_async_mycard_logic(text, user_id))
-                    format_and_reply_results(reply_token, results, extractedd, recommend_store1, recommend_store2)
+                    results, extractedd = asyncio.run(_async_mycard_logic(text, user_id))
+                    format_and_reply_results(reply_token, results, extractedd,)
                 elif action == "recommend_query":
                     app.logger.info(f"使用者 {user_id} 處於 recommend_query 狀態，查詢: {text}")
-                    results, extractedd, recommend_store1, recommend_store2 = asyncio.run(_async_result_logic(text))
-                    format_and_reply_results(reply_token, results, extractedd, recommend_store1, recommend_store2)
+                    results, extractedd = asyncio.run(_async_result_logic(text))
+                    format_and_reply_results(reply_token, results, extractedd)
                 return
+            
 
         # --- 階段三：預設回覆 ---
         # 如果以上所有條件都不滿足，代表使用者輸入了未知的指令
@@ -325,19 +340,15 @@ def handle_text_message(event: MessageEvent):
 # ==                 輔助函式 (Helper Functions)                   ==
 # =================================================================
 
-def format_and_reply_results(reply_token, results, extractedd, recommend_store1, recommend_store2):
+def format_and_reply_results(reply_token, results, extractedd):
     """將查詢結果格式化並發送"""
     reply_messages = []
 
     info_parts = []
     if extractedd and isinstance(extractedd, str) and extractedd.strip():
-        info_parts.append(f"您感興趣的商店：{extractedd}")
+        info_parts.append(f"您可能感興趣的商店：{extractedd}")
     else:
         info_parts.append("無法抽取到明確商店。")
-
-    recommended_stores_list = [s for s in [recommend_store1, recommend_store2] if s and isinstance(s, str) and s.strip()]
-    if recommended_stores_list:
-        info_parts.append(f"推薦的同類商店：{', '.join(recommended_stores_list)}")
 
     if info_parts:
         reply_messages.append(TextMessage(text="\n".join(info_parts)))
@@ -355,7 +366,7 @@ def format_and_reply_results(reply_token, results, extractedd, recommend_store1,
             )
         reply_messages.append(TextMessage(text=card_recommendations.strip()))
     else:
-        reply_messages.append(TextMessage(text="抱歉，根據您的輸入，目前找不到合適的卡片推薦。"))
+        reply_messages.append(TextMessage(text="抱歉，根據您的輸入，目前找不到合適的卡片推薦。請嘗試其他商店或關鍵字。"))
 
     reply(reply_token, reply_messages)
 
@@ -376,8 +387,7 @@ async def _async_mycard_logic(sentence: str, user_id: str):
     # 1. 透過 OpenAI 推薦相關商店
     recs = recommend_stores_by_sentence(sentence)
     extractedd = recs.get('extracted_stores') 
-    recommend_store1 = recs.get('recommend_store1')
-    recommend_store2 = recs.get('recommend_store2')
+
     
     # 2. 連接資料庫並直接呼叫新的 JOIN 函式
     conn = create_db_connection()
@@ -389,36 +399,33 @@ async def _async_mycard_logic(sentence: str, user_id: str):
         conn,
         line_user_id=user_id, # 傳入使用者的 Line ID
         extracted_stores=extractedd, 
-    )
-    
+        )
     # 如果 DataFrame 為空，表示在該使用者的卡片中找不到符合條件的優惠
     if df.empty:
         app.logger.warning(f"在使用者 {user_id} 的卡片中，查無任何相關商店資訊。")
-        return [], extractedd, recommend_store1, recommend_store2
+        return [], extractedd
 
     # 3. 進行 AI 評分與計算總分 (後續流程完全不變)
     added_df = await add_ai_scores_async(df)
     _, result_df = cal_total_scoremc(added_df) 
     results = result_df.to_dict(orient='records')
     
-    return results, extractedd, recommend_store1, recommend_store2
-
+    return results, extractedd
 async def _async_result_logic(sentence):
     recs = recommend_stores_by_sentence(sentence)
     extractedd = recs.get('extracted_stores')
-    recommend_store1 = recs.get('recommend_store1')
-    recommend_store2 = recs.get('recommend_store2')
+
     conn = create_db_connection()
     if conn is None: raise ConnectionError('❌ 無法連接到資料庫。')
-    df = fetch_tasks_from_db(conn, extractedd)
+    df = fetch_tasks_from_db(conn, 
+                            extractedd)
     if df.empty:
         app.logger.warning("資料庫查無任何相關商店資訊。")
-        return [], extractedd, recommend_store1, recommend_store2
+        return [], extractedd
     added_df = await add_ai_scores_async(df)
     _, result_df = cal_total_score(added_df) 
     results = result_df.to_dict(orient='records')
-    return results, extractedd, recommend_store1, recommend_store2
-
+    return results, extractedd
 if __name__ == '__main__':
     # 執行時請確保 _async_mycard_logic 和 _async_result_logic 函式已定義或引入
     # from your_logic_file import _async_mycard_logic, _async_result_logic
