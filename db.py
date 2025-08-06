@@ -10,9 +10,9 @@ def create_connection():
     try:
         connection = mysql.connector.connect(
             host='localhost',
-            database='card_db',
+            database='credit_card_bot',
             user='root',
-            password='pythongeneration',
+            password='RootPassword',
             charset='utf8mb4',
             port=3307
         )
