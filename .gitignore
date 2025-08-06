@@ -2,3 +2,6 @@ ngrok.exe
 /doc/
 /__pycache__/
 /templates/
+requirements.txt
+ngrok.exe
+.ngrok.exe.old
