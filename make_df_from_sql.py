@@ -41,9 +41,11 @@ def create_connection(connection_pool=None):
     try:
         connection = mysql.connector.connect(
             host=os.getenv("DB_HOST", "localhost"),
-            database=os.getenv("DB_NAME", "card_db"),
+            database=os.getenv("DB_NAME", "credit_card_bot"),
+            # database=os.getenv("DB_NAME", "card_db"),
             user=os.getenv("DB_USER", "root"),
-            password=os.getenv("DB_PASSWORD", "pythongeneration"),
+            password=os.getenv("DB_PASSWORD", "RootPassword"),
+            # password=os.getenv("DB_PASSWORD", "pythongeneration"),
             charset="utf8mb4",
             port=int(os.getenv("DB_PORT", 3307))
         )
