@@ -20,7 +20,7 @@ def cal_total_score(added_df):
         # 只輸出所需欄位
     result = top_df[["card_name","store", "總回饋", "task","total_score"]]
     
-    return added_df, result
+    return result
 
 
 def cal_total_scoremc(added_df):
@@ -41,4 +41,4 @@ def cal_total_scoremc(added_df):
         # 只輸出所需欄位
     result = top_df[["card_name","store", "總回饋", "task","total_score"]]
     
-    return added_df, result
+    return result

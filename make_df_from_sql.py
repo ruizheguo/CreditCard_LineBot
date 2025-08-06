@@ -56,7 +56,7 @@ def create_connection(connection_pool=None):
     
 #設定要抓的資料庫的表格
 
-def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores: str, table_name: str = 'Main') -> pd.DataFrame:
+def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores, table_name: str ='Main') -> pd.DataFrame:
     """
     使用 JOIN 直接從資料庫獲取特定使用者的卡片任務。
     """
@@ -67,7 +67,7 @@ def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores: st
         # 這個查詢會先 JOIN 四張表，再進行商店篩選
         query = f"""
             SELECT
-                m.card_name, m.store, m.task, m.basic_pt, m.bonus_pt, m.type, m.cooper, m.diver
+                c.card_name, m.store, m.task, m.basic_pt, m.bonus_pt, m.type, m.cooper, m.diver
             FROM
                 {table_name} AS m
             JOIN
@@ -100,7 +100,7 @@ def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores: st
         logger.error(f"❌ 獲取使用者任務資料時發生錯誤: {e}")
         return df
 
-def fetch_tasks_from_db(conn, extracted_stores, table_name:str='Main') -> pd.DataFrame:
+def fetch_tasks_from_db(conn, extracted_stores, table_name: str ='Main') -> pd.DataFrame:
     """從資料庫獲取任務資料
     
     Args:
@@ -158,14 +158,13 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
                 messages=[
                     {
                         "role": "system",
-                        "content": "你是一位精準的任務分析師。請從我提供的內容，根據「執行難度」、「執行的時間」與「機會成本」給出 1~5 分，其中 1 分為難度最低，5 分為最高，取到小數點第二位。輸出格式為：分數: X.X"
+                        "content": "你是一位精準的任務分析師。請從我提供的內容，根據「執行難度」、「執行的時間」與「機會成本」給出 1~5 分，其中 5 分為難度最低越值得去做，1 分為難度最高越不值得做，取到小數點第二位。輸出格式為：分數: X.X"
                     },
                     {"role": "user", "content": task_content}
                 ],
                 temperature=temperature,
                 seed=seed
             )
-
             content = response.choices[0].message.content
             match = re.search(r"分數[:：]?\s*([0-5]\.\d{1,2})", content)
             score = float(match.group(1)) if match else 0.0
@@ -190,4 +189,3 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
     df["task_score"] = df.index.map(scores_dict) # 確保按照索引正確匹配
     logger.info(f"✅ 完成對 {len(df)} 條任務的 AI 評分。")
     return df
-
