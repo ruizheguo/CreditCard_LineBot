@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from recommender import recommend_stores_by_sentence
 from cal_total_score import cal_total_score, cal_total_scoremc # 確保這個有引入
 from db import create_connection as create_db_connection
-from make_df_from_sql import fetch_tasks_from_db, add_ai_scores_async,fetch_tasks_for_user_with_join,fetch_all_cards 
+from make_df_from_sql import fetch_tasks_from_db, add_ai_scores_async,fetch_tasks_for_user_with_join
 
 
 load_dotenv()
@@ -41,7 +41,6 @@ from conversation import (
     get_user_cards,
     add_user_card,
     delete_user_card,
-    check_or_create_user
 )
 
 # --- Line Bot 相關設定 (純 v3 版本) ---
@@ -69,11 +68,11 @@ def callback():
     except InvalidSignatureError:
         app.logger.error("簽名驗證失敗，請檢查您的 Channel Secret。")
         abort(400)
-    for event in events:
-        user_id = event.source.user_id
-        if not check_or_create_user(user_id):
-            app.logger.error(f"無法為使用者 {user_id} 建立資料庫紀錄，停止處理事件。")
-            continue
+    # for event in events:
+    #     user_id = event.source.user_id
+    #     if not check_or_create_user(user_id):
+    #         app.logger.error(f"無法為使用者 {user_id} 建立資料庫紀錄，停止處理事件。")
+    #         continue
 
     for event in events:
         if isinstance(event, MessageEvent) and isinstance(event.message, TextMessageContent):
@@ -89,8 +88,7 @@ def get_and_group_cards_from_db():
         app.logger.error("無法連接到資料庫以獲取卡片列表。")
         return None
     # 假設您在 make_df_from_sql.py 中新增了一個函式來獲取卡片
-    from make_df_from_sql import fetch_all_cards 
-    all_cards = fetch_all_cards(conn) # 這會回傳一個像 [{'card_id': '822001', 'bank_name': '中國信託', 'card_name': '中油聯名卡'}, ...] 的列表
+    all_cards = get_all_cards() # 這會回傳一個像 [{'card_id': '822001', 'bank_name': '中國信託', 'card_name': '中油聯名卡'}, ...] 的列表
     conn.close()
 
     if not all_cards:

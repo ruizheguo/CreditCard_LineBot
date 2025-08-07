@@ -140,24 +140,6 @@ def fetch_tasks_from_db(conn, extracted_stores,table_name:str='Main') -> pd.Data
         logger.error(f"❌ 獲取任務資料錯誤: {e}")
         return df
 
-def fetch_all_cards(conn) -> list:
-    """
-    從資料庫的 cards 表中獲取所有信用卡資訊。
-    回傳一個字典列表，例如: [{'card_id': '822001', 'bank_name': '...', 'card_name': '...'}, ...]
-    """
-    cursor = conn.cursor(dictionary=True) # 使用 dictionary=True 讓回傳結果是字典格式
-    query = "SELECT card_id, bank_name, card_name FROM Card ORDER BY bank_name, card_id;"
-    
-    try:
-        cursor.execute(query)
-        cards = cursor.fetchall()
-        return cards
-    except Exception as e:
-        print(f"Error fetching all cards from DB: {e}")
-        return []
-    finally:
-        cursor.close()
-
 # -----------------------
 
 async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo-1106", temperature=0.4,seed=3): # <--- 函數名稱變更為 add_ai_scores_async
