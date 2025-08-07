@@ -4,7 +4,7 @@ def cal_total_score(added_df):
     added_df["total_score"] = added_df.apply(lambda row: calculate_total_score(
         basic_pt=row["basic_pt"],
         bonus_pt=row["bonus_pt"],
-        type_=row["type_"],
+        type=row["type"],
         ai_score=row["task_score"],
         diver=row["diver"],
         cooper=row["cooper"]
@@ -27,7 +27,7 @@ def cal_total_scoremc(added_df):
     added_df["total_score"] = added_df.apply(lambda row: calculate_total_score_mc(
         basic_pt=row["basic_pt"],
         bonus_pt=row["bonus_pt"],
-        type_=row["type_"],
+        type=row["type"],
         ai_score=row["task_score"],
     ), axis=1)
 
