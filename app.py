@@ -353,6 +353,7 @@ def format_and_reply_results(reply_token, results, extracted):
             card_recommendations += (
                 f"💳 卡片：{r.get('card_name', 'N/A')}\n"
                 f"🏪 商店：{r.get('store', 'N/A')}\n"
+                f"🪙 付款方式：{r.get('platform', 'N/A')}\n"
                 f"💰 總回饋：{r.get('總回饋', 'N/A')}\n"
                 f"📝 任務說明：{r.get('task', 'N/A')}\n"
                 f"📊 AI評分總分：{r.get('total_score', 'N/A')}\n"
