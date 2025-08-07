@@ -116,7 +116,7 @@ def fetch_tasks_from_db(conn, extracted_stores, table_name: str ='Main') -> pd.D
     try:
         cursor = conn.cursor(dictionary=True)
         query = f"""
-        SELECT card_name, store, task, basic_pt, bonus_pt, type, cooper, diver 
+        SELECT card_id, store, task, basic_pt, bonus_pt, type, cooper, diver 
         FROM {table_name}
         WHERE store LIKE %s
         """
