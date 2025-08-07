@@ -41,11 +41,9 @@ def create_connection(connection_pool=None):
     try:
         connection = mysql.connector.connect(
             host=os.getenv("DB_HOST", "localhost"),
-            database=os.getenv("DB_NAME", "credit_card_bot"),
-            # database=os.getenv("DB_NAME", "card_db"),
+            database=os.getenv("DB_NAME", "card_db"),
             user=os.getenv("DB_USER", "root"),
-            password=os.getenv("DB_PASSWORD", "RootPassword"),
-            # password=os.getenv("DB_PASSWORD", "pythongeneration"),
+            password=os.getenv("DB_PASSWORD", "pythongeneration"),
             charset="utf8mb4",
             port=int(os.getenv("DB_PORT", 3307))
         )
@@ -58,7 +56,7 @@ def create_connection(connection_pool=None):
     
 #設定要抓的資料庫的表格
 
-def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores, table_name: str ='Main') -> pd.DataFrame:
+def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores: str, table_name: str = 'Main') -> pd.DataFrame:
     """
     使用 JOIN 直接從資料庫獲取特定使用者的卡片任務。
     """
@@ -66,16 +64,16 @@ def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores, ta
     try:
         cursor = conn.cursor(dictionary=True)
         
-        # 這個查詢會先 JOIN 四張表，再進行商店篩選
+        # 這個查詢會先 JOIN 4張表，再進行商店篩選
         query = f"""
             SELECT
-                c.card_name, m.store, m.task, m.basic_pt, m.bonus_pt, m.type, m.cooper, m.diver
+                c.card_name ,m.store, m.task, m.basic_pt, m.bonus_pt, m.type_, m.cooper, m.diver
             FROM
                 {table_name} AS m
             JOIN
                 Card AS c ON c.card_id = m.card_id
             JOIN
-                UserCard AS uc ON uc.CardId_id = c.CardId_id
+                UserCard AS uc ON uc.CardId_id = c.card_id
             JOIN
                 User AS u ON u.LineUserId_id = uc.LineUserId_id
             WHERE
@@ -83,7 +81,7 @@ def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores, ta
         """
         params = (
             line_user_id,
-            f"%{extracted_stores}%",
+            f"%{extracted_stores}%"
         )
 
         cursor.execute(query, params)
@@ -102,7 +100,8 @@ def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores, ta
         logger.error(f"❌ 獲取使用者任務資料時發生錯誤: {e}")
         return df
 
-def fetch_tasks_from_db(conn, extracted_stores, table_name: str ='Main') -> pd.DataFrame:
+
+def fetch_tasks_from_db(conn, extracted_stores,table_name:str='Main') -> pd.DataFrame:
     """從資料庫獲取任務資料
     
     Args:
@@ -117,7 +116,7 @@ def fetch_tasks_from_db(conn, extracted_stores, table_name: str ='Main') -> pd.D
         cursor = conn.cursor(dictionary=True)
         query = f"""
         SELECT
-            c.card_name, m.store, m.task, m.basic_pt, m.bonus_pt, m.type, m.cooper, m.diver 
+            c.card_name, m.store, m.task, m.basic_pt, m.bonus_pt, m.type_, m.cooper, m.diver 
         FROM
             {table_name} AS m
         JOIN
@@ -126,7 +125,7 @@ def fetch_tasks_from_db(conn, extracted_stores, table_name: str ='Main') -> pd.D
         """
         params = (
             f"%{extracted_stores}%",
-        )
+)
         cursor.execute(query,params)
         rows = cursor.fetchall()
         df = pd.DataFrame(rows)
@@ -140,6 +139,25 @@ def fetch_tasks_from_db(conn, extracted_stores, table_name: str ='Main') -> pd.D
     except Error as e:
         logger.error(f"❌ 獲取任務資料錯誤: {e}")
         return df
+
+def fetch_all_cards(conn) -> list:
+    """
+    從資料庫的 cards 表中獲取所有信用卡資訊。
+    回傳一個字典列表，例如: [{'card_id': '822001', 'bank_name': '...', 'card_name': '...'}, ...]
+    """
+    cursor = conn.cursor(dictionary=True) # 使用 dictionary=True 讓回傳結果是字典格式
+    query = "SELECT card_id, bank_name, card_name FROM Card ORDER BY bank_name, card_id;"
+    
+    try:
+        cursor.execute(query)
+        cards = cursor.fetchall()
+        return cards
+    except Exception as e:
+        print(f"Error fetching all cards from DB: {e}")
+        return []
+    finally:
+        cursor.close()
+
 # -----------------------
 
 async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo-1106", temperature=0.4,seed=3): # <--- 函數名稱變更為 add_ai_scores_async
@@ -171,6 +189,7 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
                 temperature=temperature,
                 seed=seed
             )
+
             content = response.choices[0].message.content
             match = re.search(r"分數[:：]?\s*([0-5]\.\d{1,2})", content)
             score = float(match.group(1)) if match else 0.0
@@ -195,3 +214,4 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
     df["task_score"] = df.index.map(scores_dict) # 確保按照索引正確匹配
     logger.info(f"✅ 完成對 {len(df)} 條任務的 AI 評分。")
     return df
+
