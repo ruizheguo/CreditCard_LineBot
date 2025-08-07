@@ -77,7 +77,7 @@ def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores, ta
             JOIN
                 UserCard AS uc ON uc.CardId_id = c.CardId_id
             JOIN
-                _User AS u ON u.LineUserId_id = uc.LineUserId_id
+                User AS u ON u.LineUserId_id = uc.LineUserId_id
             WHERE
                 u.line_user_id = %s AND m.store LIKE %s
         """

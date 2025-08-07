@@ -165,7 +165,7 @@ def delete_user_card(line_user_id: str, card_id: str) -> bool:
     try:
         cursor = conn.cursor()
         # 修改: 查詢的欄位改為 `LineUserId_id` 和 `CardId_id`
-        query = "DELETE uc FROM `UserCard` uc WHERE LineUserId_id = %s AND CardId_id = %s"
+        query = "DELETE FROM `UserCard` WHERE LineUserId_id = %s AND CardId_id = %s"
         cursor.execute(query, (user_pk, card_pk))
         conn.commit()
         success = cursor.rowcount > 0
