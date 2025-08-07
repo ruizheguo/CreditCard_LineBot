@@ -41,9 +41,9 @@ def create_connection(connection_pool=None):
     try:
         connection = mysql.connector.connect(
             host=os.getenv("DB_HOST", "localhost"),
-            database=os.getenv("DB_NAME", "card_db"),
+            database=os.getenv("DB_NAME", "credit_card_bot"),
             user=os.getenv("DB_USER", "root"),
-            password=os.getenv("DB_PASSWORD", "pythongeneration"),
+            password=os.getenv("DB_PASSWORD", "RootPassword"),
             charset="utf8mb4",
             port=int(os.getenv("DB_PORT", 3307))
         )
@@ -56,7 +56,7 @@ def create_connection(connection_pool=None):
     
 #設定要抓的資料庫的表格
 
-def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores: str, table_name: str = 'Main') -> pd.DataFrame:
+def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores, table_name: str = 'Main') -> pd.DataFrame:
     """
     使用 JOIN 直接從資料庫獲取特定使用者的卡片任務。
     """
@@ -121,7 +121,7 @@ def fetch_tasks_from_db(conn, extracted_stores,table_name:str='Main') -> pd.Data
             {table_name} AS m
         JOIN
             Card AS c ON c.card_id = m.card_id
-        WHERE store LIKE %s
+        WHERE m.store LIKE %s
         """
         params = (
             f"%{extracted_stores}%",
