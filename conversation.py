@@ -68,7 +68,7 @@ def _get_user_pk(line_user_id: str) -> int | None:
             conn.close()
     return user_pk
 
-def _get_card_pk(card_id: int) -> int | None:
+def _get_card_pk(card_id: str) -> int | None:
     """根據業務ID (card_id) 獲取在 `UserCard` 表中要使用的主鍵 (CardId_id)"""
     conn = create_connection()
     if not conn:
@@ -82,7 +82,7 @@ def _get_card_pk(card_id: int) -> int | None:
         cursor.execute(query, (card_id,))
         row = cursor.fetchone()
         if row:
-            # 修改: 返回的欄位是 `card_id`
+            # 修改: 返回的欄位是 `CardId_id`
             card_pk = row['CardId_id']
     except Error as e:
         logger.error(f"獲取卡片 PK 時發生錯誤: {e}")
@@ -113,7 +113,7 @@ def get_all_cards() -> list[dict]:
             conn.close()
     return cards
 
-def add_user_card(line_user_id: str, card_id: int) -> bool:
+def add_user_card(line_user_id: str, card_id: str) -> bool:
     """為使用者新增卡片，操作 `UserCard` 表"""
     ensure_user_record(line_user_id)
     user_pk = _get_user_pk(line_user_id)
@@ -148,7 +148,7 @@ def add_user_card(line_user_id: str, card_id: int) -> bool:
             conn.close()
     return success
 
-def delete_user_card(line_user_id: str, card_id: int) -> bool:
+def delete_user_card(line_user_id: str, card_id: str) -> bool:
     """刪除使用者的卡片，操作 `UserCard` 表"""
     user_pk = _get_user_pk(line_user_id)
     card_pk = _get_card_pk(card_id)
