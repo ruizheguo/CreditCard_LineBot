@@ -41,7 +41,7 @@ def create_rich_menu_config():
             ),
             RichMenuArea(
                 bounds=RichMenuBounds(x=1678, y=828, width=797, height=834),
-                action=MessageAction(text='新增卡片'),
+                action=MessageAction(text='我要新增卡片'),
             )
         ]
     )

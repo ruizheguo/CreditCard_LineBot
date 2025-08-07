@@ -5,7 +5,6 @@ from typing import Optional
 import json
 from openai import OpenAI, AsyncOpenAI
 from dotenv import load_dotenv
-from safe_utils import safe_json_parse
 
 # 設定日誌
 logging.basicConfig(level=logging.INFO)
@@ -40,7 +39,10 @@ def recommend_stores_by_sentence(sentence, client: Optional[OpenAI] = None):
         
     try:
         all_stores_prompt = (
-           "根據輸入的句子，提取句中的商店。若未明言，則根據語意，先判斷其取向，例如：「我想去日本玩」判斷是「旅遊」，就可以根據旅遊推出「中華航空」或「雄獅旅遊」；「我想買水果」判斷是「生活食品」就可以根據生活食品推論出「全聯」或「愛買」。最後得到商家1。"
+           "根據輸入的句子，提取句中的商店。若未明言，則根據語意，先判斷其取向或商品"
+           "判斷商品的範例：「我想買水果」判斷是「水果」就可以根據水果，推論出可能會賣水果的店家像是：「全聯」或「愛買」"
+           "判斷取向的範例：「我想去日本」判斷是「旅遊取向」就可以根據服飾推論出「華航」或「雄獅旅遊」等旅遊相關商店"
+           "推論出的商家必須要是網路上實際存在並查詢的到的商店名稱。最後得到商家1。"
            "請以 JSON 格式回傳，不要說明文字、引言、格式說明。例如：[商家1]"
         )
         response_all_stores = client.chat.completions.create(
