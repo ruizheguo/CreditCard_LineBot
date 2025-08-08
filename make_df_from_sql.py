@@ -67,13 +67,13 @@ def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores, ta
         # 這個查詢會先 JOIN 4張表，再進行商店篩選
         query = f"""
             SELECT
-                c.card_name ,m.store, m.task, m.basic_pt, m.bonus_pt, m.type_, m.cooper, m.diver
+                c.card_name ,m.store, m.task, m.basic_pt, m.bonus_pt, m.type, m.cooper, m.diver
             FROM
                 {table_name} AS m
             JOIN
                 Card AS c ON c.card_id = m.card_id
             JOIN
-                UserCard AS uc ON uc.CardId_id = c.card_id
+                UserCard AS uc ON uc.CardId_id = c.CardId_id
             JOIN
                 User AS u ON u.LineUserId_id = uc.LineUserId_id
             WHERE
@@ -116,7 +116,7 @@ def fetch_tasks_from_db(conn, extracted_stores,table_name:str='Main') -> pd.Data
         cursor = conn.cursor(dictionary=True)
         query = f"""
         SELECT
-            c.card_name, m.store, m.task, m.basic_pt, m.bonus_pt, m.type_, m.cooper, m.diver 
+            c.card_name, m.store, m.task, m.basic_pt, m.bonus_pt, m.type, m.cooper, m.diver 
         FROM
             {table_name} AS m
         JOIN
