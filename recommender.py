@@ -55,19 +55,12 @@ def recommend_stores_by_sentence(sentence, client: Optional[OpenAI] = None):
         content_str = response_all_stores.choices[0].message.content.strip()
         content_store = json.loads(content_str)
         content_extract = content_store[0]
-        print(f"content_str: {content_str}\n")
-        print(f"content_store: {content_store}\n")
-        print(f"content_extract: {content_extract}\n")
-
         
         return {
             "extracted_stores": content_extract
         }
     except Exception as e:
         logger.error(f"推薦商店時發生錯誤: {e}")
-        print(f"content_str: {content_str}\n")
-        print(f"content_store: {content_store}\n")
-        print(f"content_extract: {content_extract}\n")
         return {
             "extracted_stores": [],
         }
