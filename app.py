@@ -110,23 +110,23 @@ def handle_text_message(event: MessageEvent):
     處理所有文字訊息的總入口 (已整合「可中斷查詢」與「單次流程」邏輯)
     """
     user_id = event.source.user_id
-    text = event.message.text.strip()
+    user_text = event.message.text.strip()
     reply_token = event.reply_token
 
-    app.logger.info(f"使用者 {user_id} 傳入訊息: {text}")
+    app.logger.info(f"使用者 {user_id} 傳入訊息: {user_text}")
 
     try:
         state = get_state(user_id)
 
         # --- 階段一：優先檢查是否為「觸發型指令」 ---
-        if text == "我的卡夾":
+        if user_text == "我的卡夾":
             clear_state(user_id)
             cards = get_user_cards(user_id)
             reply_text = "您的卡夾目前有：\n" + "\n".join(cards) if cards else "您的卡夾目前是空的喔！"
             reply(reply_token, [TextMessage(text=reply_text)])
             return
 
-        if text == "我要新增卡片":
+        if user_text == "我要新增卡片":
             # 【關鍵】我們重新啟用 set_state，因為後續的處理流程需要它
             set_state(user_id, "add", "input_card") 
             
@@ -143,7 +143,7 @@ def handle_text_message(event: MessageEvent):
             return
 
 
-        if text == "我要刪除卡片":
+        if user_text == "我要刪除卡片":
             my_card_names = get_user_cards(user_id)
             if not my_card_names:
                 reply(reply_token, [TextMessage(text="您的卡夾是空的，沒有可以刪除的卡片。")])
@@ -164,19 +164,19 @@ def handle_text_message(event: MessageEvent):
             reply(reply_token, [TextMessage(text=menu)])
             return
 
-        if text == "我想去買東西！但我不知道我的卡當中哪個合適！":
+        if user_text == "我想去買東西！但我不知道我的卡當中哪個合適！":
             set_state(user_id, "mycard_query", "querying")
             reply_text = "好的，您已進入【查詢個人卡片】模式。\n請告訴我您想去哪裡消費？（可隨時點選單切換功能）"
             reply(reply_token, [TextMessage(text=reply_text)])
             return
 
-        if text == "我想去買東西，但我不知道哪些信用卡最合適！":
+        if user_text == "我想去買東西，但我不知道哪些信用卡最合適！":
             set_state(user_id, "recommend_query", "querying")
             reply_text = "好的，您已進入【推薦新卡片】模式。\n請告訴我您想去哪裡消費？（可隨時點選單切換功能）"
             reply(reply_token, [TextMessage(text=reply_text)])
             return
         
-        if text == "關於我們":
+        if user_text == "關於我們":
             reply_text = (
                 "✨ 卡哩嗨 功能介紹 ✨\n"
                 "我們旨在解決您的信用卡選擇困難，讓每次消費都享受到最佳回饋！\n\n"
@@ -203,7 +203,7 @@ def handle_text_message(event: MessageEvent):
         if state:
             if state.get('step') == 'input_card':
                 action = state.get('action')
-                card_id_input = text  # text 此時會是 "013003" 這種卡片ID
+                card_id_input = user_text  # user_text 此時會是 "013003" 這種卡片ID
                 reply_text = ""
                 
                 try:
@@ -227,12 +227,12 @@ def handle_text_message(event: MessageEvent):
             if state.get('step') == 'querying':
                 action = state.get('action')
                 if action == "mycard_query":
-                    app.logger.info(f"使用者 {user_id} 處於 mycard_query 狀態，查詢: {text}")
-                    results, extractedd = asyncio.run(_async_mycard_logic(text, user_id))
+                    app.logger.info(f"使用者 {user_id} 處於 mycard_query 狀態，查詢: {user_text}")
+                    results, extractedd = asyncio.run(_async_mycard_logic(user_text, user_id))
                     format_and_reply_results(reply_token, results, extractedd)
                 elif action == "recommend_query":
-                    app.logger.info(f"使用者 {user_id} 處於 recommend_query 狀態，查詢: {text}")
-                    results, extractedd = asyncio.run(_async_result_logic(text))
+                    app.logger.info(f"使用者 {user_id} 處於 recommend_query 狀態，查詢: {user_text}")
+                    results, extractedd = asyncio.run(_async_result_logic(user_text))
                     format_and_reply_results(reply_token, results, extractedd)
                 return
             
