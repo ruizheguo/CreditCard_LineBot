@@ -336,7 +336,7 @@ async def _async_result_logic(sentence):
 if __name__ == '__main__':
     # 為了讓 Flask 在開發模式下能正常執行，需要設定 asyncio 的事件循環策略 (僅限 Windows)
     # 在 macOS 或 Linux 上通常不需要這行
-    # import platform
-    # if platform.system() == "Windows":
-    #    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)), debug=True)
+    import platform
+    if platform.system() == "Windows":
+       asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    app.run(host='127.0.0.1', port=8080, debug=True)

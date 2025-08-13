@@ -164,7 +164,8 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
                 messages=[
                     {
                         "role": "system",
-                        "content": "你是一位精準的任務分析師。請從我提供的內容，根據「執行難度」、「執行的時間」與「機會成本」給出 1~5 分，其中 5 分為難度最低越值得去做，1 分為難度最高越不值得做，取到小數點第二位。輸出格式為：分數: X.X"
+                        "content": "你是一位精準的任務分析師。請從我提供的內容，根據「執行難度」、「執行的時間」與「機會成本」給出 1~5 分，其中 5 分為難度最低越值得去做，1 分為難度最高越不值得做，取到小數點第二位。"
+                        "最後只以「分數：X.X」的固定格式回傳，不要有說明、引言等其他文字，例如：「分數：3.45」。"
                     },
                     {"role": "user", "content": task_content}
                 ],
@@ -173,9 +174,10 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
             )
 
             content = response.choices[0].message.content
-            match = re.search(r"分數[:：]?\s*([0-5]\.\d{1,2})", content)
+            print(f"AI 評分回應：{content}") # 可以調整日誌輸出
+            match = re.search(r"分數[:：]?\s*([1-5]\.\d{0,2})", content)
             score = float(match.group(1)) if match else 0.0
-            print(f"評分完成：{score} for task: {task_content}") # 可以調整日誌輸出
+            print(f"評分完成：{score} for task: {task_content}")
 
         except Exception as e:
             logger.error(f"❌ 任務評分失敗（{task_content}）：{e}")
