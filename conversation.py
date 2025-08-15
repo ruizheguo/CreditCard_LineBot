@@ -2,6 +2,7 @@
 import logging
 from db import create_connection
 from mysql.connector import Error
+from collections import defaultdict
 
 # 設定日誌
 logging.basicConfig(level=logging.INFO)
@@ -14,13 +15,16 @@ def set_state(line_user_id: str, action: str, step: str):
     user_state[line_user_id] = {'action': action, 'step': step}
     logger.info(f"使用者 {line_user_id} 的狀態已設定為: {user_state[line_user_id]}")
 
+
 def get_state(line_user_id: str):
     return user_state.get(line_user_id)
+
 
 def clear_state(line_user_id: str):
     if line_user_id in user_state:
         del user_state[line_user_id]
         logger.info(f"已清除使用者 {line_user_id} 的狀態。")
+
 
 # --- 資料庫操作 (已修改對應您的資料表) ---
 
@@ -43,6 +47,7 @@ def ensure_user_record(line_user_id: str):
         if conn.is_connected():
             cursor.close()
             conn.close()
+
 
 def _get_user_pk(line_user_id: str) -> int | None:
     """根據 line_user_id 獲取主鍵 LineUserId_id"""
@@ -68,6 +73,7 @@ def _get_user_pk(line_user_id: str) -> int | None:
             conn.close()
     return user_pk
 
+
 def _get_card_pk(card_id: str) -> int | None:
     """根據業務ID (card_id) 獲取在 `UserCard` 表中要使用的主鍵 (CardId_id)"""
     conn = create_connection()
@@ -92,6 +98,7 @@ def _get_card_pk(card_id: str) -> int | None:
             conn.close()
     return card_pk
 
+
 def get_all_cards() -> list[dict]:
     """從 `Card` 獲取所有卡片資料"""
     conn = create_connection()
@@ -112,6 +119,30 @@ def get_all_cards() -> list[dict]:
             cursor.close()
             conn.close()
     return cards
+
+
+def get_and_group_cards_from_db():
+    # 這個函式將取代原本硬編碼的邏輯
+    # 稍後我們會來實現它
+    conn = create_connection()
+    if not conn:
+        logger.error("無法連接到資料庫以獲取卡片列表。")
+        return None
+    # 假設您在 make_df_from_sql.py 中新增了一個函式來獲取卡片
+    all_cards = get_all_cards() # 這會回傳一個像 [{'card_id': '822001', 'bank_name': '中國信託', 'card_name': '中油聯名卡'}, ...] 的列表
+    conn.close()
+
+    if not all_cards:
+        return None
+
+    grouped_cards = defaultdict(list)
+    for card in all_cards:
+        grouped_cards[card['bank_name']].append({
+            "id": card['card_id'],
+            "name": card['card_name']
+        })
+    return grouped_cards
+
 
 def add_user_card(line_user_id: str, card_id: str) -> bool:
     """為使用者新增卡片，操作 `UserCard` 表"""
@@ -148,6 +179,7 @@ def add_user_card(line_user_id: str, card_id: str) -> bool:
             conn.close()
     return success
 
+
 def delete_user_card(line_user_id: str, card_id: str) -> bool:
     """刪除使用者的卡片，操作 `UserCard` 表"""
     user_pk = _get_user_pk(line_user_id)
@@ -180,6 +212,7 @@ def delete_user_card(line_user_id: str, card_id: str) -> bool:
             cursor.close()
             conn.close()
     return success
+
 
 def get_user_cards(line_user_id: str) -> list[str]:
     """獲取使用者擁有的所有卡片名稱"""

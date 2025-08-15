@@ -16,7 +16,6 @@ import asyncio
 import re ###DS加入 做新增信用卡的輪播用
 from flask import Flask, request, abort
 from flex_message import create_card_carousel, create_bank_grouped_carousel
-from collections import defaultdict
 
 # --- v3 的主要模組 ---
 # 移除了所有來自 linebot.models (v2) 的引入
@@ -38,6 +37,7 @@ from conversation import (
     set_state,
     clear_state,
     get_all_cards,
+    get_and_group_cards_from_db,
     get_user_cards,
     add_user_card,
     delete_user_card,
@@ -79,30 +79,6 @@ def callback():
             handle_text_message(event)
 
     return 'OK'
-
-def get_and_group_cards_from_db():
-    # 這個函式將取代原本硬編碼的邏輯
-    # 稍後我們會來實現它
-    conn = create_db_connection()
-    if not conn:
-        app.logger.error("無法連接到資料庫以獲取卡片列表。")
-        return None
-    # 假設您在 make_df_from_sql.py 中新增了一個函式來獲取卡片
-    all_cards = get_all_cards() # 這會回傳一個像 [{'card_id': '822001', 'bank_name': '中國信託', 'card_name': '中油聯名卡'}, ...] 的列表
-    conn.close()
-
-    if not all_cards:
-        return None
-
-    grouped_cards = defaultdict(list)
-    for card in all_cards:
-        grouped_cards[card['bank_name']].append({
-            "id": card['card_id'],
-            "name": card['card_name']
-        })
-    return grouped_cards
-
-
 
 
 def handle_text_message(event: MessageEvent):
