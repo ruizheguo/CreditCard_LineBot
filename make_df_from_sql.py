@@ -176,7 +176,7 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
             content = response.choices[0].message.content
             print(f"AI 評分回應：{content}") # 可以調整日誌輸出
             match = re.search(r"分數[:：]?\s*([1-5]\.\d{0,2})", content)
-            score = float(match.group(1)) if match else 0.0
+            score = float(match.group(1)) if match else 5
             print(f"評分完成：{score} for task: {task_content}")
 
         except Exception as e:
