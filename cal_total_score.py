@@ -57,7 +57,7 @@ def cal_total_score(added_df):
         lambda row: f"{float(row['basic_pt']) + float(row['bonus_pt'])}%", axis=1
     )
 
-    result = top_df[["card_name", "store", "總回饋", "task", "total_score"]]
+    result = top_df[["card_name", "store", "總回饋", "task", "note", "total_score"]].copy()
     result = append_platform(result)
     return result
 
@@ -79,6 +79,6 @@ def cal_total_scoremc(added_df):
         lambda row: f"{float(row['basic_pt']) + float(row['bonus_pt'])}%", axis=1
     )
 
-    result = top_df[["card_name", "store", "總回饋", "task", "total_score"]]
+    result = top_df[["card_name", "store", "總回饋", "task", "note", "total_score"]].copy()
     result = append_platform(result)
     return result

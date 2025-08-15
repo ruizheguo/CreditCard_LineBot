@@ -85,14 +85,28 @@ def create_card_carousel(results: list) -> FlexMessage:
                         contents=[
                             FlexText(text='任務說明', size='md', weight='bold'),
                             FlexText(
-                                text=r.get('task', '無特定任務說明'),
+                                text=r.get('task') if r.get('task') not in [None, ""] else '無特定任務說明',
                                 wrap=True,
                                 color='#666666',
                                 size='sm',
                                 margin='md'
-                            ),
+                            )
                         ]
                     ),
+                    FlexBox(
+                        layout='vertical',
+                        margin='lg',
+                        contents=[                            
+                            FlexText(text='備註', size='sm', weight='bold'),
+                            FlexText(
+                                text=r.get('note') if r.get('note') not in [None, ""] else '無特定備註',
+                                wrap=True,
+                                color='#666666',
+                                size='sm',
+                                margin='md'
+                            )
+                        ]
+                    )
                 ]
             ),
         )
