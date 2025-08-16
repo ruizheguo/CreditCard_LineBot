@@ -142,13 +142,13 @@ def handle_text_message(event: MessageEvent):
 
         if user_text == "我想去買東西！但我不知道我的卡當中哪個合適！":
             set_state(user_id, "mycard_query", "querying")
-            reply_text = "好的，您已進入【查詢個人卡片】模式。\n請告訴我您想去哪裡消費？（可隨時點選單切換功能）"
+            reply_text = "好的，您已進入【消費購物】模式。請問您想去哪裡消費？\n同時輸入想買的東西可提高推薦準確度。（可隨時點選單切換功能）"
             reply(reply_token, [TextMessage(text=reply_text)])
             return
 
         if user_text == "我想去買東西，但我不知道哪些信用卡最合適！":
             set_state(user_id, "recommend_query", "querying")
-            reply_text = "好的，您已進入【推薦新卡片】模式。\n請告訴我您想去哪裡消費？（可隨時點選單切換功能）"
+            reply_text = "好的，您已進入【推薦新卡片】模式。請問您想去哪裡消費？\n同時輸入想買的東西可提高推薦準確度。（可隨時點選單切換功能）"
             reply(reply_token, [TextMessage(text=reply_text)])
             return
         

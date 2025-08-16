@@ -81,7 +81,6 @@ def create_card_carousel(results: list) -> FlexMessage:
                     FlexSeparator(margin='lg'),
                     FlexBox(
                         layout='vertical',
-                        margin='lg',
                         contents=[
                             FlexText(text='任務說明', size='md', weight='bold'),
                             FlexText(
@@ -95,7 +94,6 @@ def create_card_carousel(results: list) -> FlexMessage:
                     ),
                     FlexBox(
                         layout='vertical',
-                        margin='lg',
                         contents=[                            
                             FlexText(text='備註', size='sm', weight='bold'),
                             FlexText(
