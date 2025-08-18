@@ -2,13 +2,6 @@
 import json
 import re
 
-def safe_json_parse(content):
-    try:
-        match = re.search(r"\[[^\]]+\]", content)
-        return json.loads(match.group()) if match else []
-    except json.JSONDecodeError:
-        return []
-
 def calculate_total_score(basic_pt, bonus_pt, type_, ai_score, diver, cooper):
                         
     # 检查所有输入值是否为None或非数值

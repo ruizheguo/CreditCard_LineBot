@@ -5,7 +5,6 @@ from typing import Optional
 import json
 from openai import OpenAI, AsyncOpenAI
 from dotenv import load_dotenv
-from safe_utils import safe_json_parse
 
 # 設定日誌
 logging.basicConfig(level=logging.INFO)
