@@ -45,4 +45,4 @@ def calculate_total_score_mc(basic_pt, bonus_pt, type_, ai_score):
         return None
         
     # 计算总分
-    return (basic_pt +bonus_pt) + 0.3*(4-type_) + 0.17*ai_score
+    return basic_pt + bonus_pt * (0.3*type_ + 0.17*ai_score)
