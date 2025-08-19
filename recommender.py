@@ -30,7 +30,7 @@ def get_openai_client() -> OpenAI:
         raise RuntimeError("🔑 請在 .env 裡設定 OPENAI_API_KEY")
     return OpenAI(api_key=api_key)
 
-def get_embedding(text: str, client: OpenAI, model="text-embedding-3-small") -> list[float]:
+def get_embedding(text: str, client: OpenAI, model="text-embedding-3-large") -> list[float]:
     """獲取單一段落文字的 embedding 向量"""
     text = text.replace("\n", " ")
     response = client.embeddings.create(input=[text], model=model)

@@ -349,16 +349,16 @@ async def _async_mycard_logic(sentence: str, user_id: str):
             else:
                 # 如果向量也沒東西，或跟上次一樣，就沿用第一次的結果
                 final_extracted = extracted_gpt
-            # --- 3. 最終處理 ---
-            # 如果 df 最終仍然是空的，直接回傳
-            return [], final_extracted
-
-
-    # 如果 df 有資料，才進行後續的 AI 評分和計算
-    added_df = await add_ai_scores_async(df)
-    result_df = cal_total_scoremc(added_df) 
-    results = result_df.to_dict(orient='records')
-    return results, final_extracted
+    
+    # --- 3. 最終處理 ---
+    if df.empty:    # 如果 df 最終仍然是空的，直接回傳
+        app.logger.warning(f"在使用者 {user_id} 的卡片中，查無任何相關商店資訊。")
+        return [], final_extracted
+    else:           # 如果 df 有資料，才進行後續的 AI 評分和計算
+        added_df = await add_ai_scores_async(df)
+        result_df = cal_total_scoremc(added_df) 
+        results = result_df.to_dict(orient='records')
+        return results, final_extracted
 
 
 async def _async_result_logic(sentence):
@@ -402,13 +402,16 @@ async def _async_result_logic(sentence):
                     app.logger.warning(f"向量搜尋的店家 '{final_extracted}' 在DB中也無對應優惠。")
             else:
                 final_extracted = extracted_gpt
-            # --- 3. 最終處理 ---
-            return [], final_extracted
-        
-    added_df = await add_ai_scores_async(df)
-    result_df = cal_total_score(added_df) 
-    results = result_df.to_dict(orient='records')
-    return results, final_extracted
+
+    # --- 3. 最終處理 ---
+    if df.empty:    # 如果 df 最終仍然是空的，直接回傳
+        app.logger.warning(f"在使用者 {user_id} 的卡片中，查無任何相關商店資訊。")
+        return [], final_extracted
+    else:           # 如果 df 有資料，才進行後續的 AI 評分和計算
+        added_df = await add_ai_scores_async(df)
+        result_df = cal_total_score(added_df) 
+        results = result_df.to_dict(orient='records')
+        return results, final_extracted
 
 
 if __name__ == '__main__':

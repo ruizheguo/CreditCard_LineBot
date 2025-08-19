@@ -51,7 +51,12 @@ def cal_total_score(added_df):
         axis=1,
     )
 
-    top_df = added_df.sort_values(by="total_score", ascending=False).head(3)
+    sorted_df = added_df.sort_values(by="total_score", ascending=False)
+    # 根據 card_name 去重，並保留每張卡片分數最高的那一筆
+    distinct_cards_df = sorted_df.drop_duplicates(subset=['card_name'], keep='first')
+    # 最後取前三名
+    top_df = distinct_cards_df.head(3)
+
     top_df["total_score"] = top_df["total_score"].apply(lambda x: f"{x:.2f}")
     top_df["總回饋"] = top_df.apply(
         lambda row: f"{float(row['basic_pt']) + float(row['bonus_pt'])}%", axis=1
@@ -73,7 +78,12 @@ def cal_total_scoremc(added_df):
         axis=1,
     )
 
-    top_df = added_df.sort_values(by="total_score", ascending=False).head(3)
+    sorted_df = added_df.sort_values(by="total_score", ascending=False)
+    # 根據 card_name 去重，並保留每張卡片分數最高的那一筆
+    distinct_cards_df = sorted_df.drop_duplicates(subset=['card_name'], keep='first')
+    # 最後取前三名
+    top_df = distinct_cards_df.head(3)
+
     top_df["total_score"] = top_df["total_score"].apply(lambda x: f"{x:.2f}")
     top_df["總回饋"] = top_df.apply(
         lambda row: f"{float(row['basic_pt']) + float(row['bonus_pt'])}%", axis=1
