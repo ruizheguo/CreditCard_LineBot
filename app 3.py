@@ -2,7 +2,7 @@
 import os
 from flask import Flask, request, abort # 導入 abort
 from dotenv import load_dotenv
-from recommender import load_vectors_into_global_cache,find_best_matching_store_vector,recommend_stores_by_sentence
+from recommender import load_vectors_into_global_cache, find_best_matching_store_vector, recommend_stores_by_sentence
 from cal_total_score import cal_total_score, cal_total_scoremc # 確保這個有引入
 from db import create_connection as create_db_connection
 from make_df_from_sql import fetch_tasks_from_db, add_ai_scores_async,fetch_tasks_for_user_with_join

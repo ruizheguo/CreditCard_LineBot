@@ -1,9 +1,9 @@
 # app.py
 import os
-from flask import Flask, render_template, request, abort # 導入 abort
+from flask import Flask, request, abort # 導入 abort
 from dotenv import load_dotenv
-from recommender import recommend_stores_by_sentence
-from cal_total_score import cal_total_score, cal_total_scoremc # 確保這個有引入
+from recommender import load_vectors_into_global_cache, find_best_matching_store_vector, recommend_stores_by_sentence
+from cal_total_score import cal_total_score, cal_total_scoremc
 from db import create_connection as create_db_connection
 from make_df_from_sql import fetch_tasks_from_db, add_ai_scores_async,fetch_tasks_for_user_with_join
 
@@ -204,12 +204,12 @@ def handle_text_message(event: MessageEvent):
                 action = state.get('action')
                 if action == "mycard_query":
                     app.logger.info(f"使用者 {user_id} 處於 mycard_query 狀態，查詢: {user_text}")
-                    results, extractedd = asyncio.run(_async_mycard_logic(user_text, user_id))
-                    format_and_reply_results(reply_token, results, extractedd)
+                    results, final_extracted = asyncio.run(_async_mycard_logic(user_text, user_id))
+                    format_and_reply_results(reply_token, results, final_extracted)
                 elif action == "recommend_query":
                     app.logger.info(f"使用者 {user_id} 處於 recommend_query 狀態，查詢: {user_text}")
-                    results, extractedd = asyncio.run(_async_result_logic(user_text))
-                    format_and_reply_results(reply_token, results, extractedd)
+                    results, final_extracted = asyncio.run(_async_result_logic(user_text))
+                    format_and_reply_results(reply_token, results, final_extracted)
                 return
             
         # --- 階段三：預設回覆 ---
@@ -238,20 +238,20 @@ def handle_text_message(event: MessageEvent):
         clear_state(user_id)
         reply(reply_token, [TextMessage(text=f"處理您的請求時發生錯誤，系統已重置您的對話狀態，請再試一次。")])
 
+
 # =================================================================
 # ==                 輔助函式 (Helper Functions)                   ==
 # =================================================================
 
-
 # 【修改點 3】: 修改此函式以呼叫新的 create_card_carousel
-def format_and_reply_results(reply_token, results, extractedd):
+def format_and_reply_results(reply_token, results, final_extracted):
     """將查詢結果格式化並發送 (新版：使用 Flex Message)"""
     reply_messages = []
 
     # 1. 建立開頭的文字說明
     info_parts = []
-    if extractedd and isinstance(extractedd, str) and extractedd.strip():
-        info_parts.append(f"根據您的需求，我們分析出相關商店為：「{extractedd}」。")
+    if final_extracted and isinstance(final_extracted, str) and final_extracted.strip():
+        info_parts.append(f"根據您的需求，我們分析出相關商店為：「{final_extracted}」。")
     else:
         info_parts.append("我們將為您進行廣泛的信用卡推薦。")
     
@@ -282,49 +282,134 @@ def reply(reply_token: str, messages: list):
         )
     )
 
-# --- 信用卡推薦的核心非同步邏輯 ---
-# (這部分的邏輯保持不變)
+
+print("--- 應用程式啟動：開始預先載入店家向量 ---")
+try:
+    preload_conn = create_db_connection()
+    if preload_conn:
+        # 呼叫新的函式，它會直接填充 recommender.py 中的全域快取
+        load_vectors_into_global_cache(preload_conn)
+        preload_conn.close()
+    else:
+        print("!!! 警告：無法連接到資料庫，跳過向量預載入 !!!")
+except Exception as e:
+    print(f"!!! 錯誤：預載入向量時發生問題: {e} !!!")
+
+
+# =================================================================
+# ==                 信用卡推薦的核心邏輯 (非同步)                 ==
+# =================================================================
+
 async def _async_mycard_logic(sentence: str, user_id: str):
     """
     【JOIN 版本】根據使用者擁有的卡片進行推薦。
     """
     recs = recommend_stores_by_sentence(sentence)
-    extractedd = recs.get('extracted_stores') 
+    extracted_gpt = recs.get('extracted_stores') 
     
-    conn = create_db_connection()
-    if conn is None: 
-        raise ConnectionError('❌ 無法連接到資料庫。')
-    
-    df = fetch_tasks_for_user_with_join(
-        conn,
-        line_user_id=user_id,
-        extracted_stores=extractedd, 
-    )
-    if df.empty:
-        app.logger.warning(f"在使用者 {user_id} 的卡片中，查無任何相關商店資訊。")
-        return [], extractedd
+    if extracted_gpt:
+        app.logger.info(f"GPT 提取到候選店家: {extracted_gpt}")
+        conn = create_db_connection()
+        if conn is None: 
+            raise ConnectionError('❌ 無法連接到資料庫。')
+        # 立即驗證資料庫中是否有此店家的優惠
+        df = fetch_tasks_for_user_with_join(
+            conn,
+            line_user_id=user_id,
+            extracted_stores = extracted_gpt, 
+        )
+        conn.close()
 
+        if not df.empty:
+            # 如果成功找到優惠，確定使用這個店家名稱
+            final_extracted = extracted_gpt
+            app.logger.info(f"✅ 成功！GPT 提取的店家 '{final_extracted}' 在DB中找到 {len(df)} 筆優惠。")
+
+        elif df.empty:
+            app.logger.warning(f"GPT 提取的店家 '{extracted_gpt}' 在DB中無對應優惠，準備嘗試向量備用方案。")
+            # --- 2. 備用方案：向量搜尋 & 二次驗證 ---
+            # 只有在主要方案的資料庫驗證失敗後 (df 依然是空的)，才執行這部分
+            app.logger.info("--- Phase 2: 執行向量搜尋備用方案 ---")
+            recs_vec = find_best_matching_store_vector(sentence)
+            extracted_vec = recs_vec.get('extracted_stores')
+
+            if extracted_vec and (extracted_vec != extracted_gpt): # 避免重複查詢
+                app.logger.info(f"向量搜尋找到候選店家: {extracted_vec}")
+                conn = create_db_connection()
+                # 再次驗證資料庫
+                if conn is None: 
+                    raise ConnectionError('❌ 無法連接到資料庫。')
+                df = fetch_tasks_for_user_with_join(conn, user_id, extracted_vec)
+                conn.close()
+                final_extracted = extracted_vec # 無論有無結果，都以最後一次嘗試的店家為準
+                if not df.empty:
+                    app.logger.info(f"✅ 成功！向量搜尋的店家 '{final_extracted}' 在DB中找到 {len(df)} 筆優惠。")
+                else:
+                    app.logger.warning(f"向量搜尋的店家 '{final_extracted}' 在DB中也無對應優惠。")
+            else:
+                # 如果向量也沒東西，或跟上次一樣，就沿用第一次的結果
+                final_extracted = extracted_gpt
+            # --- 3. 最終處理 ---
+            # 如果 df 最終仍然是空的，直接回傳
+            return [], final_extracted
+
+
+    # 如果 df 有資料，才進行後續的 AI 評分和計算
     added_df = await add_ai_scores_async(df)
     result_df = cal_total_scoremc(added_df) 
     results = result_df.to_dict(orient='records')
-    
-    return results, extractedd
+    return results, final_extracted
+
 
 async def _async_result_logic(sentence):
     recs = recommend_stores_by_sentence(sentence)
-    extractedd = recs.get('extracted_stores')
+    extracted_gpt = recs.get('extracted_stores')
 
-    conn = create_db_connection()
-    if conn is None: raise ConnectionError('❌ 無法連接到資料庫。')
-    df = fetch_tasks_from_db(conn, extractedd)
-    if df.empty:
-        app.logger.warning("資料庫查無任何相關商店資訊。")
-        return [], extractedd
+    if extracted_gpt:
+        app.logger.info(f"GPT 提取到候選店家: {extracted_gpt}")
+        conn = create_db_connection()
+        if conn is None: 
+            raise ConnectionError('❌ 無法連接到資料庫。')
+        # 立即驗證資料庫中是否有此店家的優惠
+        df = fetch_tasks_from_db(
+            conn,
+            extracted_stores = extracted_gpt, 
+        )
+        conn.close()
+
+        if not df.empty:
+            final_extracted = extracted_gpt
+            app.logger.info(f"✅ 成功！GPT 提取的店家 '{final_extracted}' 在DB中找到 {len(df)} 筆優惠。")
+
+        elif df.empty:
+            app.logger.warning(f"GPT 提取的店家 '{extracted_gpt}' 在DB中無對應優惠，準備嘗試向量備用方案。")
+            # --- 2. 備用方案：向量搜尋 & 二次驗證 ---
+            app.logger.info("--- Phase 2: 執行向量搜尋備用方案 ---")
+            recs_vec = find_best_matching_store_vector(sentence)
+            extracted_vec = recs_vec.get('extracted_stores')
+
+            if extracted_vec and extracted_vec != extracted_gpt:
+                app.logger.info(f"向量搜尋找到候選店家: {extracted_vec}")
+                conn = create_db_connection()
+                if conn is None: 
+                    raise ConnectionError('❌ 無法連接到資料庫。')
+                df = fetch_tasks_from_db(conn, extracted_vec)
+                conn.close()
+                final_extracted = extracted_vec
+                if not df.empty:
+                    app.logger.info(f"✅ 成功！向量搜尋的店家 '{final_extracted}' 在DB中找到 {len(df)} 筆優惠。")
+                else:
+                    app.logger.warning(f"向量搜尋的店家 '{final_extracted}' 在DB中也無對應優惠。")
+            else:
+                final_extracted = extracted_gpt
+            # --- 3. 最終處理 ---
+            return [], final_extracted
         
     added_df = await add_ai_scores_async(df)
     result_df = cal_total_score(added_df) 
     results = result_df.to_dict(orient='records')
-    return results, extractedd
+    return results, final_extracted
+
 
 if __name__ == '__main__':
     # 為了讓 Flask 在開發模式下能正常執行，需要設定 asyncio 的事件循環策略 (僅限 Windows)

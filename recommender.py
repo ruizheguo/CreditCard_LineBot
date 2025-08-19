@@ -1,18 +1,13 @@
 # recommender.py
-# recommender.py
 import os
 import logging
 import numpy as np
 import pickle
 from dotenv import load_dotenv
-from openai import OpenAI
-from db import create_connection
+from openai import OpenAI, AsyncOpenAI
 import logging
 from typing import Optional
 import json
-from openai import OpenAI, AsyncOpenAI
-from dotenv import load_dotenv
-from safe_utils import safe_json_parse
 
 # 設定日誌
 logging.basicConfig(level=logging.INFO)
@@ -108,7 +103,7 @@ def find_best_matching_store_vector(sentence: str):
         # 3. 根據分數(元組的第一個元素 a[0])由高到低進行排序
         all_scores.sort(key=lambda a: a[0], reverse=True)
 
-        # 4. 取出前 K (K=5) 個結果
+        # 4. 取出前 K (top_k=5) 個結果
         top_k = 5
         top_results = all_scores[:top_k]
 
@@ -131,7 +126,7 @@ def find_best_matching_store_vector(sentence: str):
         
         # 7. 回傳結果
         if extracted_stores_list:
-            # 【注意】: extracted_stores 現在是一個列表
+            # 如果有符合條件的店家，回傳第一個店家名稱
             return {"extracted_stores": extracted_stores_list[0]}
         else:
             # 如果過濾後沒有任何結果，也回傳空列表
@@ -141,24 +136,6 @@ def find_best_matching_store_vector(sentence: str):
     except Exception as e:
         logger.error(f"向量搜尋過程中發生錯誤: {e}")
         return {"extracted_stores": []}
-
-def get_openai_client() -> OpenAI:
-    """獲取 OpenAI 客戶端
-    
-    Returns:
-        OpenAI 客戶端
-    """
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("🔑 請在 .env 裡設定 OPENAI_API_KEY")
-    return OpenAI(api_key=api_key)
-
-async def get_async_openai_client() -> AsyncOpenAI: # <--- 新增一個非同步客戶端獲取函數
-    """獲取非同步 OpenAI 客戶端"""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("🔑 請在 .env 裡設定 OPENAI_API_KEY")
-    return AsyncOpenAI(api_key=api_key) # <--- 返回 AsyncOpenAI 實例
 
 
 def recommend_stores_by_sentence(sentence, client: Optional[OpenAI] = None):
@@ -175,7 +152,8 @@ def recommend_stores_by_sentence(sentence, client: Optional[OpenAI] = None):
         )
         response_all_stores = client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
-            temperature=0.7,
+            temperature=0.4,
+            seed=1,
             messages=[
                 {"role": "system", "content": all_stores_prompt},
                 {"role": "user", "content": sentence}

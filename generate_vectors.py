@@ -51,7 +51,6 @@ def main():
         # 3. 遍歷店家，獲取向量並更新回資料庫
         for row in tqdm(stores_to_process, desc="向量化進度"):
             store_name = row['store']
-            store_tags = row['tags'] if row['tags'] else ''
 
             # 獲取向量
             vector = get_embedding(store_name, client)

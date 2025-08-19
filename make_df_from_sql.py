@@ -101,7 +101,7 @@ def fetch_tasks_for_user_with_join(conn, line_user_id: str, extracted_stores, ta
         return df
 
 
-def fetch_tasks_from_db(conn, extracted_stores,table_name:str='Main') -> pd.DataFrame:
+def fetch_tasks_from_db(conn, extracted_stores, table_name: str='Main') -> pd.DataFrame:
     """從資料庫獲取任務資料
     
     Args:
@@ -142,7 +142,7 @@ def fetch_tasks_from_db(conn, extracted_stores,table_name:str='Main') -> pd.Data
 
 # -----------------------
 
-async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo-1106", temperature=0.4,seed=3): # <--- 函數名稱變更為 add_ai_scores_async
+async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo-1106", temperature=0.4, seed=1): # <--- 函數名稱變更為 add_ai_scores_async
     if openai_client_async is None:
         # 獲取非同步的 OpenAI 客戶端實例
         # 您需要修改 get_openai_client() 來返回 AsyncOpenAI
