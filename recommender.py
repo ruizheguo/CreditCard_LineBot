@@ -135,7 +135,9 @@ def find_best_matching_store_vector(sentence: str):
 
     except Exception as e:
         logger.error(f"向量搜尋過程中發生錯誤: {e}")
-        return {"extracted_stores": []}
+        return {
+            "extracted_stores": []
+        }
 
 
 def recommend_stores_by_sentence(sentence, client: Optional[OpenAI] = None):
@@ -170,5 +172,5 @@ def recommend_stores_by_sentence(sentence, client: Optional[OpenAI] = None):
     except Exception as e:
         logger.error(f"推薦商店時發生錯誤: {e}")
         return {
-            "extracted_stores": [],
+            "extracted_stores": []
         }

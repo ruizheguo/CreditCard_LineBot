@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 from recommender import get_openai_client
 import re
 from openai import AsyncOpenAI # <--- 新增
-
 # 引入 asyncio 以便並行運行協程
 import asyncio # <--- 新增
+
 # 載入環境變數
 load_dotenv()
 
@@ -189,7 +189,7 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
     evaluation_coroutines = [evaluate_single_task(idx, task_content) for idx, task_content in tasks_to_evaluate]
 
     # 同步等待所有協程完成，並收集結果
-    # results 會是一個包含 (index, score) 元組的列表
+    # results 會是一個包含 (task_index, score) 元組的列表
     all_scores_with_index = await asyncio.gather(*evaluation_coroutines)
 
     # 將結果按照原始 DataFrame 的索引順序放回 scores 列表中

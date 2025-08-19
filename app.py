@@ -191,7 +191,7 @@ def handle_text_message(event: MessageEvent):
                         success = delete_user_card(user_id, card_id)
                         reply_text = "✅ 刪除成功！" if success else "刪除失敗，請確認您是否擁有此卡，或卡片ID不正確。"
                 except ValueError:
-                    reply_text = "⚠️ 輸入格式錯誤，請輸入數字卡片ID。"
+                    reply_text = "⚠️ 輸入格式錯誤，請輸入卡片ID的正確號碼。"
                 except Exception as e:
                     app.logger.error(f"卡片操作時發生錯誤: {e}")
                     reply_text = "處理您的請求時發生錯誤，請稍後再試。"
@@ -405,7 +405,7 @@ async def _async_result_logic(sentence):
 
     # --- 3. 最終處理 ---
     if df.empty:    # 如果 df 最終仍然是空的，直接回傳
-        app.logger.warning(f"在使用者 {user_id} 的卡片中，查無任何相關商店資訊。")
+        app.logger.warning(f"資料庫查無任何相關商店資訊。")
         return [], final_extracted
     else:           # 如果 df 有資料，才進行後續的 AI 評分和計算
         added_df = await add_ai_scores_async(df)
