@@ -20,8 +20,8 @@ def calculate_total_score(basic_pt, bonus_pt, type_, ai_score, diver, cooper):
         return None
         
     # 计算总分
-    # (0.3*type_ + 0.17*ai_score)/0.47 = 折減係數
-    return basic_pt + bonus_pt * ((0.3*type_ + 0.17*ai_score)/0.47) + 0.28*diver + 0.25*cooper
+    # (0.3*type_ + 0.17*ai_score)/(5* 0.47) = 折減係數
+    return basic_pt + bonus_pt * (0.3*type_ + 0.17*ai_score)/(5* 0.47) + 0.28*diver + 0.25*cooper
 
 def calculate_total_score_mc(basic_pt, bonus_pt, type_, ai_score):
                           
