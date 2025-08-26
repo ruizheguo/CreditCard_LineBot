@@ -67,7 +67,7 @@ def create_card_carousel(results: list) -> FlexMessage:
                         layout='horizontal',
                         contents=[
                             FlexText(text='最高總回饋:', color='#aaaaaa', size='sm', flex=2),
-                            FlexText(text=str(r.get('最高總回饋', 'N/A')), color='#1DB446', size='xl', weight='bold', flex=5)
+                            FlexText(text=str(r.get('總回饋', 'N/A')), color='#1DB446', size='xl', weight='bold', flex=5)
                         ]
                     ),                    
                     FlexSeparator(margin='lg'),
