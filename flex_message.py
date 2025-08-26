@@ -52,14 +52,14 @@ def create_card_carousel(results: list) -> FlexMessage:
                         layout='horizontal',
                         contents=[
                             FlexText(text='商店:', color='#aaaaaa', size='sm', flex=2),
-                            FlexText(text=r.get('store', 'N/A'), color='#666666', size='sm', flex=5, wrap=True)
+                            FlexText(text=r.get('store', 'N/A'), color='#666666', size='sm', flex=4, wrap=True)
                         ]
                     ),
                     FlexBox(
                         layout='horizontal',
                         contents=[
                             FlexText(text='付款方式:', color='#aaaaaa', size='sm', flex=2),
-                            FlexText(text=r.get('platform', 'N/A'), color='#666666', size='sm', flex=5, wrap=True)
+                            FlexText(text=r.get('platform', 'N/A'), color='#666666', size='sm', flex=4, wrap=True)
                         ]
                     ),
                     # 總回饋
@@ -67,7 +67,7 @@ def create_card_carousel(results: list) -> FlexMessage:
                         layout='horizontal',
                         contents=[
                             FlexText(text='最高總回饋:', color='#aaaaaa', size='sm', flex=2),
-                            FlexText(text=str(r.get('總回饋', 'N/A')), color='#1DB446', size='xl', weight='bold', flex=5)
+                            FlexText(text=str(r.get('總回饋', 'N/A')), color='#1DB446', size='xl', weight='bold', flex=4)
                         ]
                     ),                    
                     FlexSeparator(margin='lg'),
