@@ -66,18 +66,10 @@ def create_card_carousel(results: list) -> FlexMessage:
                     FlexBox(
                         layout='horizontal',
                         contents=[
-                            FlexText(text='總回饋:', color='#aaaaaa', size='sm', flex=2),
-                            FlexText(text=str(r.get('總回饋', 'N/A')), color='#1DB446', size='xl', weight='bold', flex=5)
+                            FlexText(text='最高總回饋:', color='#aaaaaa', size='sm', flex=2),
+                            FlexText(text=str(r.get('最高總回饋', 'N/A')), color='#1DB446', size='xl', weight='bold', flex=5)
                         ]
-                    ),
-                    # AI 評分
-                    FlexBox(
-                        layout='horizontal',
-                        contents=[
-                            FlexText(text='AI 評分:', color='#aaaaaa', size='sm', flex=2),
-                            FlexText(text=f"{float(r.get('total_score', 0.0)):.2f}", color='#666666', size='sm', flex=5)
-                        ]
-                    ),
+                    ),                    
                     FlexSeparator(margin='lg'),
                     FlexBox(
                         layout='vertical',
