@@ -186,7 +186,7 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
         
     # 使用 asyncio.gather 來並行運行所有評估任務
     # 將所有 evaluate_single_task 協程加入到一個列表中
-    evaluation_coroutines = [evaluate_single_task(idx, task_content) for idx, task_content in tasks_to_evaluate]
+    evaluation_coroutines = [evaluate_single_task(index, task) for index, task in tasks_to_evaluate]
 
     # 同步等待所有協程完成，並收集結果
     # results 會是一個包含 (task_index, score) 元組的列表
@@ -194,7 +194,7 @@ async def add_ai_scores_async(df, openai_client_async=None, model="gpt-3.5-turbo
 
     # 將結果按照原始 DataFrame 的索引順序放回 scores 列表中
     # 可以創建一個新的 Series 或直接映射回 DataFrame
-    scores_dict = {idx: score for idx, score in all_scores_with_index}
+    scores_dict = {index: score for index, score in all_scores_with_index}
     df["task_score"] = df.index.map(scores_dict) # 確保按照索引正確匹配
     logger.info(f"✅ 完成對 {len(df)} 條任務的 AI 評分。")
     return df
